@@ -20,9 +20,8 @@ from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 from PIL import Image as PILImage
 from kivy.graphics.texture import Texture
+np.random.seed(5)
 
-# Importing the Dqn object from our AI in ai.py
-from ai import Dqn
 
 # Adding this line if we don't want the right click to put a red point
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
@@ -35,6 +34,7 @@ last_x = 0
 last_y = 0
 n_points = 0
 length = 0
+
 
 
 last_reward = 0
@@ -52,11 +52,31 @@ done = True
 on_road = -1
 on_road_count = 0
 off_road_count = 0
+boundary_hit_count = 0
+goal_hit_count = 0
+train_episode_num = 0
+eval_episode_num = 0
 mode="Eval"
 if os.path.exists("results") == False:
     os.makedirs("results")
-eval_on_road_stats_file= open("results/eval_on_road_stats.csv","w")
-train_on_road_stats_file= open("results/train_on_road_stats.csv","w")
+
+if os.path.exists("sand_images") == False:
+    os.makedirs("sand_images")	
+	
+	
+full_eval_on_road_stats_file= open("results/full_eval_on_road_stats.csv","a")
+eval_on_road_stats_file= open("results/eval_on_road_stats.csv","a")
+train_on_road_stats_file= open("results/train_on_road_stats.csv","a")
+full_eval_traversal_log= open("results/full_eval_traversal_log.txt","w")
+eval_traversal_log= open("results/eval_traversal_log.txt","w")
+train_traversal_log= open("results/train_traversal_log.txt","w")
+traversal_log = None
+
+img = None
+car_img = None
+global_counter = 0
+
+
 
 def init():
     global sand
@@ -66,9 +86,13 @@ def init():
     global done
     global max_steps
     global current_step
+    global img
+    global car_img
+    global global_counter
 	
     sand = np.zeros((longueur,largeur))
     img = PILImage.open("./images/mask.png").convert('L')
+    car_img = PILImage.open("./images/latest_triangle_car.png")
     sand = np.asarray(img)/255	
     goal_x = 1050
     goal_y = 425
@@ -133,7 +157,25 @@ class Game(Widget):
         self.car.action_q = action_q
         self.car.next_state_reward_done_tuple_q = next_state_reward_done_tuple_q
 
+    
+    def get_state(self, img, car_img, x, y,  car_angle, global_counter,longueur, largeur, traversal_log): 
+        if x - 40 <0 or y-40 < 0 or x+40 > longueur-1 or y+40 > longueur-1:
+            return np.ones((80,80))
+        else:
+            img_crop = img.crop((x -40, y-40, x+40, y +40))
+            car_rotated = car_img.rotate(car_angle)
+            car_size = (40,40)
+            car_rotated = car_rotated.resize(car_size, PILImage.ANTIALIAS).convert("RGBA")
+            img_crop.paste(car_rotated, (30, 30), car_rotated)
+            if global_counter % 500 == 0:
+                print("map: get_state: for image id: " + str(int(global_counter / 500) + 1) + " angle: " + str(car_angle))
+                traversal_log.write("map: get_state: car angle: " + str(car_angle))
+                img_crop.save("sand_images/sand_superimposed_car_" + str(int(global_counter / 500) + 1) + ".png", "PNG")
+            state_value = np.asarray(img_crop)/255	
+            return state_value
+			
 
+	
     def update(self, dt):
 
         global last_reward
@@ -152,56 +194,87 @@ class Game(Widget):
         global on_road_count
         global off_road_count
         global eval_on_road_stats_file
+        global full_eval_on_road_stats_file
         global train_on_road_stats_file
         global mode
-        
+        global boundary_hit_count
+        global goal_hit_count
+        global train_episode_num
+        global eval_episode_num
+        global eval_traversal_log
+        global full_eval_traversal_log
+        global train_traversal_log
+        global traversal_log
+        global img
+        global car_img
+        global global_counter
 
         longueur = self.width
         largeur = self.height
         self.car.start_event.wait()
         if done == True:
+            if traversal_log is not None:
+                traversal_log.flush()
+				
             if current_step > 0:
                 if mode == "Train" :
-                    train_on_road_stats_file.write(str(on_road_count) + "," + str(off_road_count) + "\n") 
+                    train_on_road_stats_file.write(str(train_episode_num) + "," + str(on_road_count) + "," + str(off_road_count) + "," + str(boundary_hit_count) + "," + str(goal_hit_count) +  "\n") 
                     train_on_road_stats_file.flush()
+                elif mode == "Eval" :
+                    eval_on_road_stats_file.write( str(train_episode_num) + "," +  str(eval_episode_num) + "," + str(on_road_count) + "," + str(off_road_count) + "," + str(boundary_hit_count) + "," + str(goal_hit_count) +  "\n")
+                    eval_on_road_stats_file.flush()	
                 else:
-                    eval_on_road_stats_file.write(str(on_road_count) + "," + str(off_road_count) + "\n")
-                    eval_on_road_stats_file.flush()					
+                    full_eval_on_road_stats_file.write(str(eval_episode_num) + "," + str(on_road_count) + "," + str(off_road_count) + "," + str(boundary_hit_count) + "," + str(goal_hit_count) +  "\n")
+                    full_eval_on_road_stats_file.flush()	
             reset = self.car.reset_q.get()
 
             if reset == True:
                 print("first_update is set to True")
                 first_update = True
 				
-            mode = self.car.mode_q.get()
+            (mode, train_episode_num, eval_episode_num) = self.car.mode_q.get()
             print("mode: ", mode) 
             if mode == "Train":
                 max_steps = 2500
-            else: 
-                max_steps = 2500			
+                traversal_log = train_traversal_log
+            elif mode == "Eval": 
+                max_steps = 500
+                traversal_log = eval_traversal_log
+            else:
+                max_steps = 2500
+                traversal_log = full_eval_traversal_log				
 			
         if first_update:
             init()
+            on_road_count = 0
+            off_road_count = 0
+            boundary_hit_count = 0
+            goal_hit_count = 0
             #self.car.pos = (100,100)
             self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
             print("After reset car position: ", self.car.pos)
-            state = sand[int(self.car.x)-40:int(self.car.x)+40, int(self.car.y)-40:int(self.car.y)+40]
+            traversal_log.write("After reset car position: " + str(self.car.pos) + "\n")
+            #state = sand[int(self.car.x)-40:int(self.car.x)+40, int(self.car.y)-40:int(self.car.y)+40]
+            state = self.get_state( img, car_img, self.car.x, self.car.y, self.car.angle, global_counter,longueur, largeur, traversal_log)
+			
 			## TODO:
-            if state.shape[0] != 80 or state.shape[1] != 80:
-                state = np.ones((80,80))
+            #if state.shape[0] != 80 or state.shape[1] != 80:
+            #    state = np.ones((80,80))
 			
             xx = goal_x - self.car.x
             yy = goal_y - self.car.y
             if sand[int(self.car.x),int(self.car.y)] > 0:
                 on_road = -1
+                off_road_count += 1
             else :
                 on_road = 1
+                on_road_count += 1
             orientation = Vector(*self.car.velocity).angle((xx,yy))/180.			
             self.car.state_q.put((state, np.array([orientation, -orientation, 1, on_road])))
             print("map.py self.car.state_q", self.car.state_q)
-            on_road_count += 1
-            off_road_count += 1
-            on_road = -1			
+ 		
    
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
@@ -215,6 +288,7 @@ class Game(Widget):
         velocity = action_array[1]
         new_velocity = 0.4 + 1 + velocity*0.2
         print("map: Got rotation: ", rotation, " velocity: ", new_velocity)
+        traversal_log.write("map: Got rotation: " + str(rotation) + " velocity: " + str(new_velocity) + "\n")
         #rotation = action2rotation[action]
         self.car.move(rotation)
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
@@ -223,67 +297,99 @@ class Game(Widget):
             #self.car.x = 20
             last_reward = -50
             self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            print("Hit Boundary: new car postion: ",self.car.pos)
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
+            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
+            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
+            boundary_hit_count += 1
         if self.car.x > self.width - 40:
             #self.car.x = self.width - 20
             last_reward = -50
             self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            print("Hit Boundary: new car postion: ",self.car.pos)
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
+            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
+            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
+            boundary_hit_count += 1
         if self.car.y < 40:
             #self.car.y = 20
             last_reward = -50
             self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            print("Hit Boundary: new car postion: ",self.car.pos)
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
+            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
+            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
+            boundary_hit_count += 1
         if self.car.y > self.height - 40:
             #self.car.y = self.height - 20
             last_reward = -50
             self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            print("Hit Boundary: new car postion: ",self.car.pos)
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
+            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
+            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
+            boundary_hit_count += 1
 
         if sand[int(self.car.x),int(self.car.y)] > 0:
             #vel = 0.4 + np.random.uniform(0, 2)
             #self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
-            self.car.velocity = Vector(new_velocity, 0).rotate(self.car.angle)
-            print(1,  current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, int(distance - last_distance), int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
-            on_road = -1
+            self.car.velocity = Vector(new_velocity, 0).rotate(self.car.angle)            
             last_reward = -2
+            on_road = -1
+            off_road_count += 1
+            print(1,  current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, float(distance - last_distance),  im.read_pixel(int(self.car.x),int(self.car.y)), last_reward)
+            traversal_log.write("1" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward) + "\n")
         else: # otherwise
             #self.car.velocity = Vector(2, 0).rotate(self.car.angle)
             self.car.velocity = Vector(new_velocity, 0).rotate(self.car.angle)
             on_road = 1
+            on_road_count += 1
             last_reward = -0.5
-            print(0, current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, int(distance - last_distance),  im.read_pixel(int(self.car.x),int(self.car.y)))
+            
             if distance < last_distance:
                 last_reward = last_reward + 5
                 
             else:
                 last_reward = last_reward + 2
-                on_road = 1
-
+                on_road = 1			
+            print(0, current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, float(distance - last_distance),  im.read_pixel(int(self.car.x),int(self.car.y)), last_reward)
+            traversal_log.write("0" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward)+ "\n")
         
 
         if distance < 25:
             reward = 100
+            goal_hit_count += 1
+			
             if swap == 1:
+                print("Hit the Goal 2: (" + str(goal_x) + ", " + str(goal_y) + ")")
+                traversal_log.write("Hit the Goal 2: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
                 #goal_x = 1420
                 #goal_y = 622
                 goal_x = 1050
                 goal_y = 425
                 swap = 0
             else:
-                goal_x = 212
-                goal_y = 150
+                print("Hit the Goal 1: (" + str(goal_x) + ", " + str(goal_y) + ")")
+                traversal_log.write("Hit the Goal 1: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
+                #goal_x = 212
+                #goal_y = 150
+                #goal_x = 975
+                #goal_y = 110
+                goal_x = 620
+                goal_y = 40
                 swap = 1
 
         last_distance = distance
 		
-        next_state = sand[int(self.car.x)-40:int(self.car.x)+40, int(self.car.y)-40:int(self.car.y)+40]
+        #next_state = sand[int(self.car.x)-40:int(self.car.x)+40, int(self.car.y)-40:int(self.car.y)+40]
+        next_state = self.get_state(img, car_img, self.car.x, self.car.y, self.car.angle, global_counter,longueur, largeur, traversal_log)
 		## TODO:
-        if next_state.shape[0] != 80 or next_state.shape[1] != 80:
-            next_state = np.ones((80,80))
+        #if next_state.shape[0] != 80 or next_state.shape[1] != 80:
+        #    next_state = np.ones((80,80))
 			
         reward = last_reward
         current_step += 1
+        global_counter += 1
         if current_step >= max_steps:
             done = True
         distance_diff = (distance - last_distance)/4
