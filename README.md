@@ -358,34 +358,92 @@ From the analysis it is evident that best performance of car is between 120 and 
 
 Next I loaded Actor and Critic model corresponding to the episode and do a full evaluation of 2500 steps for 5 times only using Policy Network and calculate average reward earned and also observe car is performing and note that in a table like below
 
-120	+157	Average Reward is best, lot of good moves but little unstable
-122	-436.40	Hit the goals twice but Average Reward score is very poor
-128	-254	Average Reward is low 
-130	-290	Average Reward is low
-134	-320	Average Reward is low
-140	-387	Average Reward is low
-142	-192	Average Reward is low
-144	-263	Average Reward is low
-147	-29.70	Very smooth, worth exploring, Average Reward is good
-148	-77.20	Very smooth, worth exploring, Average Reward is good
-150	-58.40	Very smooth, worth exploring, Average Reward is good
-151	-251	Average Reward is Low
-152	-275	Bit Shaky but worth exploring
-154	-392.80	Average Reward is very low
-156	-473.40 	Average Reward is very low
-158	-360.20	Average Reward is very low
-160	-625.50	Average Reward is very low
-199	-2105	Worst. Has Ghoomar effect
+
+| Episode   | Average Reward | Comment                         
+| ----------| ---------------|-------------------------------------------------------------|
+|  116      |  -16.50        | Lot of times misses goal by whisker but good moves          |
+|  120      |  +157          | Average reward is best but moves are not smooth             |
+|  122      |  -436.40       | Hit the goals twice but Average Reward score is very poor   |
+|  128      |  -254          | Average Reward is low                                       |
+|  130      |  -290          | Average Reward is low                                       |            
+|  134      |  -320          | Average Reward is low                                       |
+|  140      |  -387          | Average Reward is low                                       |
+|  142      |  -192          | Average Reward is low                                       |
+|  144      |  -263          | Average Reward is low                                       |
+|  147      |  -29.70        | Very smooth, worth exploring, Average Reward is good        |
+|  148      |  -77.20        | Very smooth, worth exploring, Average Reward is good        |
+|  150      |  -58.40        | Very smooth, worth exploring, Average Reward is good        |
+|  151      |  -251          | Average Reward is Low                                       |
+|  152      |  -275          | Bit Shaky but worth exploring                               |
+|  154      |  -392.80       | Average Reward is very low                                  |
+|  156      |  -473.40       | Average Reward is very low                                  |
+|  158      |  -360.20       | Average Reward is very low                                  |
+|  160      |  -625.50       | Average Reward is very low                                  |
+|  199      | - 2105         | Worst. Has Ghoomar effect                                   |
 
 
-| Episode      | Average Reward   | Comment                         
-| -------------| -----------------|----------------------------------------------------|
-|  116         |  -16.50          | Lot of times misses goal by whisker but good moves |
-|  120         |  +157            | Average reward is best but moves are not smooth    |
-| Car is on the Road but distance to Goal increased |  +2      |                                                   |
-| Car has hit boundary                              |  -50     | Car is moved to random position                   |
-| Car has reached the goal                          | +100     |                                                   |
-| Car has done 360 degree rotation                  | -50      | Angle is chnaged by taking modulus of 360 or -360 |
+
+
+
+
+
+
+ 
+From all the observations I found that though episode 120 has highest reward but car moves are not very smooth. So I have decided to choose model from episode 147 which has good average reward but car moves are smooth, so I have chosen model from episode 147 for deployment, demo and any further fine tuning. I have stored all the other model weights as well so that it can used for future analysis
+
+# VII.  Issues Faced During Training and how I handled
+
+## a.	Car hitting Boundary and remain there: For handling this scenario, once car is within 0 pixels boundary, I am giving heavy penalty of -50 and moving the car to a random position to start with. As I am using fixes number of steps for each episode, I continue after hitting boundary
+## b.	Car is circling same place (Ghoomar Effect):
+For this is one of common issue that I also encountered. When it happens the action value of  rotation, velocity become either near 5 and -5 and it stays there. I  think this can happen when there are not enough random samples to explore and during training samples are taken from replay buffer which are fed Policy Network and Policy Network has not learnt yet. Here are a things I tried to overcome Ghoomar Effect
+### a.	
+I have taken 10000 random experiences initially and even after that also I used exploration factor epsilon initialized to 0.9 and reduce it by 0.05 very episode till it reaches 0.2. This ensures replay buffer always have enough random experiences in buffer
+### b.	
+Whenever 360 degree rotation happens, clockwise or anti clockwise, I penalize the car agent by giving reward of -50. For checking if car has rotated 360 I check if the car.angle value is greater than 360 or less than 360 and then take modulus value of 360 (if clockwise) or modulus value of -360 (if anti clockwise) to set the new car angle so that I do not miss it next time
+### c.	
+The default learning of Adam optimizer is 0.001. I changed the learning to 1e-5 for actor and 2e-5 for critic. Also I used weight decay (L2 regularization) for Actor 
+
+ 
+# VIII.  Future Improvements
+
+The There are lot of scopes for improvements
+
+## a.	Multiple Goals:
+Although during training I have used two goals, after hitting the first goal, the goal is changed to second goal. But in reality I saw goal is hit less number of times, so second goal has got very less exploration. Also, number of goals can be increased. To give equal weightage to all the chosen goals, one of the goals can be chosen randomly during episode
+## b.	Multiple cars:
+In real world scenario, there will be multiple cars plying on the Road. Our agent should learn to handle this and should avoid collisions. For this MADDPG (Multiple Agent Deep Deterministic Algorithm) could be used
+### c.	Kalman Filter:
+From Wikipedia “In statistics and control theory, Kalman filtering, also known as linear quadratic estimation (LQE), is an algorithm that uses a series of measurements observed over time, containing statistical noise and other inaccuracies, and produces estimates of unknown variables that tend to be more accurate than those based on a single measurement alone, by estimating a joint probability distribution over the variables for each timeframe”. Even though I have used LSTM but Kalman filter could give better results
+
+# IX. Code Structure:
+
+| File Name                             | Description                                                                  
+| --------------------------------------| -----------------------------------------------------------------------------|
+| TD3_train.py                          | This is the main file for training using TD3                                 |
+| TD3_test.py                           | TD3_test.py	This is the main file for testing using TD3                      |
+| TD3_test.py                           | Kivy Environment file                                                        |
+| SimulatedGymEnvironmentFromKivyCar.py | his file provides API to simulate gym environment from real kivy environment |
+| car.kv                                | Kivy properties filefor Car                                                  |
+| images folder                         | Includes all the images of car, triangular car etc.                          |
+| generate_plots.ipynb                  | Jupyter Notebook to generate plots from the collected metrics                |
+
+
+# X. Logs for Debugging and Troubleshooting 
+
+| File Name                           | Description                                                                  
+| ------------------------------------| -----------------------------------------------------------------------------------------------|
+| results/train_epoch_reward.csv      | Rewards earned during training episode. Fields are Training Episode, Total Reward              |
+| results/eval_epoch_reward.csv       | Rewards earned during evaluation.  The fields are Training Episode, Run No, Total Rewards      |
+| results/train_on_road_stats.csv     | Contains on road statistics during training. Episode No, On/off Road Count, Total reward       |                                     | results/eval_on_road_stats.csv      | Contains on road statistics during evaluation. Episode No, Eval No., On/off Road Count, Reward | | results/train_traversal_log.txt     | Log file which captures the information about each step during training                        |
+| results/eval_traversal_log.txt      | Log file which captures the information about each step during evaluation                      |
+| results/full_eval_traversal_log.txt | Log file which captures the information about each step during full evaluation                 |
+| results/policy_action_file.txt      | This file contains the policy values (rotation, velocity) calculated by Policy Network         |
+| results/full_eval_epoch_reward.csv  | Rewards earned during each epoch for Full Evaluation mode                                      |
+| results/full_eval_on_road_stats.csv | On Road stats for Full Evaluation modes                                                        |
+| sand_images/                        | After every 500 timesteps ,the sand image with superimposed triangle and number is captured    |
+
+
+
 
 
 
