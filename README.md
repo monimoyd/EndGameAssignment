@@ -2,7 +2,7 @@
 EngGameAssignment
 
 # I. Project Overview
-Problem Statement
+## Problem Statement
 
 ![Kivy Car Environment](/doc_images/kivy_car_environment.png)
 
@@ -191,6 +191,107 @@ There are three full connected layers.
 -	Third layer  output form second layer transform to 1 tensor on which tanh is applied and multiplied by max_action to get the actor output
 
 ## iii.	Critic Network
+
+![Critic Network](/doc_images/critic_network.png)
+
+### Critic Input: 
+The Critic Network takes Input as two element tuple
+i.	80x80 numpy array representing  sand with superimposed isosceles triangle rotated the same direction as car and a number score (1-5)
+ii.	Second element is a Numpy Array having 4 parameters, these are
+a.	Angle of Car
+b.	Orientation of car to the goal
+c.	Difference in distance between current car position to the goal and previous car position and the goal divided by 4
+d.	A flag on_road, whose value 1 means car is on road and 0 means car is off the Road
+i.	Actor output (Rotation, Velocity)
+
+### Convolution Layer: 
+
+There are 5 convolution layers used to transform the road pixel input. Except last layer, each layer 16 3x3 filters with stride 2 and ReLU Activation is used. Last layer has 16 3x3 filter with stride 1
+
+### GAP Layer: 
+
+Global average pooling layer is added after 5 convolution layer which transform into 16x1x1
+
+### LSTM Layer: 
+
+LSTM layer takes the 1 d array and encode into hidden layer of 32 vector tensor
+
+### FC Layer:
+
+-	First layer layer takes hidden layer output form LSTM concatenate with 4 additional state information (angle, orientation to goal, difference in distance to goal, On road flag value) and actions (Rotation, Velocity) convert into 64 1D tensors and applied ReLU activation
+-	Second layer concatenates  first layer output and the and output is 128 1d tensor and applied ReLU activation
+-	Third layer  output form second layer transform to 1 tensor which is the Q value of Critic
+
+## iii.	Workflows Used
+
+The following flowchart shows the workflow used.
+
+![Workflow](/doc_images/work_flow.png)
+
+i.	Running an episode of 2500 steps
+ii.	Perform Training and save model after each episode tagged with the episode number so that it can be retrieved for post analysis. Collect metrics
+iii.	After every two training cycles, Perform Evaluation for 500 steps for 10 times and collect metrics
+iv.	Run analytics on the metrics and choose the best model
+ 
+
+## iv.	Training
+
+### a.	Hyper parameters Used during training
+           I  have used Adam optimizer for both Actor and Critic Networks with the
+           following hyper parameters:
+
+                 Batch Size: 128
+                 Number of time steps : 500000
+                 Steps per episode: 2500
+                 Discount Rate (gamma) : 0.99
+                 Soft update of target parameters (Tau) : 0.005
+                 Initial warmup episodes without learning: 10000 timesteps
+                 Number of learning steps for each environment step : 128
+                 Exploration Noise : 0.1
+                 Policy Noise : 0.2
+                Actor Learning Rate: 1e-5
+                Actor Weight Decay: 0.01
+                 Critic Learning Rate: 2e-5
+
+
+### b.	 Techniques used to Improve Training
+
+     To improve the training I have used the following techniques
+
+i.	Warmup: Initial 10000 timestamps the replay buffer is filled up random policy by choosing action randomly from the action space. This will help better exploration
+ii.	LSTM:  As the steps taken by car is a sequence problem LSTM used in the network to improve performance.
+iii.	Choosing Sequences of Experiences from Replay Buffer :  As I have used  LSTM, instead of just taking sample randomly from replay buffer, I have taken sequences of experiences . As I used fixed number of timesteps for each episode, records for consecutive episodes are sequentially stored in replay buffer and it is easy to get records for a particular episode using the following: 
+-	 Randomly choose one episode from the list of completed episodes.
+-	 Randomly choose one of timestep from the chosen episode. Ensure that timestep chosen is between 0 and 2500-256
+-	Instead of taking consecutive experiences, I have chosen experience a gap of two 
+For example if currently 100 episodes are run and the randomly chosen episode is 10 and starting sequence is 100 then the record ids that are chosen  from Replay Buffer for training are:
+
+[100*2500 + 100, 100*2500 + 102, 100*2500 + 104, …100*2500 + 356]
+
+iv.	Exploration factor epsilon: For episode explorations, I used a epsilon value which is initialized to 0.9 and after each episode epsilon value is reduced by 0.05 until it reaches 0.2. A random number is generated between 0 and 1 if it is less than epsilon value then next action is taken from random policy else action is taken from the DNN based policy network
+
+v.	Gaussian noise  with mean value of 0 and standard deviation (sigma) of 0.1 has been added to explore states.
+
+vi.	Saving Models separately for each episode: After each episode the model that is used during the episode is saved separately for both actor and Critic. As I have run 200 episodes, so there are 200 instances of both Actor and Critic models are saved. Based on analytics results of metrics collected during the training episode and evaluations done after training 2 episodes, helps to decides which model is doing the best and that is used for deployment.
+
+
+v.	Evaluation:
+
+There are two modes of evaluation:
+i.	Eval : This is used after two training cycles to evaluate the Policy network by using only Policy learnt so far. Each evaluation consists of  500 timesteps and each is run 10 times
+ii.	Full Evaluation: - This mode is used for demo and deployment. Currently when Goal is reached done variable is set to True. (For running full episode stop_on_hitting_goal to False. But ideally during testing time instead of random location it should be on the road but it is not implemented yet).
+
+
+# VI.  Analytics on Metrics Collected
+
+The metrics collected during Training and Evaluation phases after each episode are as below:
+i.	Total Rewards
+ii.	On Road Count
+iii.	Off Road Count
+iv.	Hit Boundary Count
+v.	Hit Destination Goal Count
+
+Plots are done on the collected metrics as below:
 
 
 
