@@ -1,7 +1,7 @@
 # EndGameProject
 EngGameAssignment
 
-# Project Overview
+# I. Project Overview
 Problem Statement
 
 ![Kivy Car Environment](/doc_images/kivy_car_environment.png)
@@ -68,8 +68,8 @@ The agent i.e. car takes from the current state an action based on the policy an
 a.	Observation State Space:
 The following a few picture samples show the examples of one part of observation state space
 
-![sand1(/doc_images/sand_1.png)   ![sand2(/doc_images/sand_2.png)     ![sand3(/doc_images/sand_3.png) 
-![sand4(/doc_images/sand_4.png)   ![sand5(/doc_images/sand_5.png)     ![sand6(/doc_images/sand_6.png) 
+![sand1](/doc_images/sand_1.png)   ![sand2](/doc_images/sand_2.png)     ![sand3](/doc_images/sand_3.png) 
+![sand4](/doc_images/sand_4.png)   ![sand5](/doc_images/sand_5.png)     ![sand6](/doc_images/sand_6.png) 
 
 Observation state space consists of a image 
 -	Taking mask value of sand by taking 80x80 numpy array by taking 40 pixel around the car.
@@ -84,6 +84,23 @@ Observation state space consists of a image
 |   3     |  Car is on the Road but distance to destination is increased from the last position  |
 |   4     |  Car is on the Road but distance to destination is reduce from the last position     |
 |   5     | Car has reached the Destination goal                                                 |
+
+
+This image is processed by CNN and LSTM
+In addition the following additional attributes are used in state space
+
+
+
+| Number          | What the car did                                                                                                   |
+| ----------------| ------------------------------------------------------------------------------------------------------------------ |
+| Car Angle       | The angle the car is rotated divided by 360. If angle is more than 360 or less than -360, modulus operation is done|  
+| Orientation     |  Angle of orientation of current position of car to the destination goal divided by 360                            |
+| On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |     |Diff of Distance | Difference of distance of the car to the Destination goal from the current position and the last position          |
+|                 | normalized by dividing by 4
+
+
+
+
 
 
 
