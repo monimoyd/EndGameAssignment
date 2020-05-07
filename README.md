@@ -293,6 +293,46 @@ v.	Hit Destination Goal Count
 
 Plots are done on the collected metrics as below:
 
+### a.	Plot of Training Episode vs Total Rewards
+
+![Training Episode vs Total Rewards](/doc_images/Training_Episode_vs_Total_Rewards.png)
+
+### Analysis : From this plot, it is evident that total reward increases sequentially initially and reaches peak between 125 and 160 and then start declining
+
+### b.	Plot of Training Episode (i.e.  Evaluations done for 500 steps 10 times after training episode) vs Average Total Rewards
+
+![Training Episode vs Average Total Rewards](/doc_images/Evaluation_Episode_vs_Total_Rewards.png)
+
+Analysis : From this plot, it is evident that total reward increases sequentially initially and reaches peak between episodes 120 and 165 and then start declining
+
+### c.	Plot of Training Episode vs On Road Percentage 
+
+On Road percentage is calculated using formula
+
+On Road Percentage = On Road Count / (On Road Count + Off Road Count) * 100
+
+![Training Episode vs On Road Percentage](/doc_images/Train_Episode_vs_On_Road_Percentage.png)
+
+### Analysis: 
+From the plot, on road percentage is fluctuating but over episodes even though it is fluctuating the amplitude of flucutation gets bigger. Around 125 to 160 episodes, the amplitude is in highest range which means car is performing better during these episodes
+
+### d.	Plot of Training Episode (i.e. Evaluation of 500 steps for 10 times  after training Episode) vs Average On Road Percentage 
+
+![Training Eval Episode vs On Road Percentage](/doc_images/Evaluation_Episode_vs_On_Road_Percentage.png)
+
+### Analysis: 
+From the plot, on road percentage increases over episodes and reaches peak between 125 and 160 and then decreases. I could see less fluctuations compared to training so looks like Policy Network is more stable, but during training as I am still using random samples, so system can be bit unstable 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
