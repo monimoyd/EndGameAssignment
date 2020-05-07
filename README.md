@@ -14,6 +14,10 @@ I have used Kivy Environment for this project
 https://kivy.org/doc/stable/installation/installation-windows.html with maps provided by TSAI.
 In this project I have created a framework for Deep Reinforcement Learning.
 
+Youtube Video Link:
+https://youtu.be/WJPDG1FKJQg 
+
+
 Highlights of various activities I have done in the project
 -	Created a simulated gym environment based on Kivy environment 
 -	Used Twin Delayed Deep Deterministic (TD3) algorithm  for training
