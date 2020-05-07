@@ -147,6 +147,53 @@ For Details of TD3 algorithm and flows please visit:
 https://github.com/monimoyd/P2_S9
 
 
+# IV. Methodology and Solution approach
+## i.	Simulated Gym Environment to encapsulate the Kivy Environment
+Kivy Environment does not provide methods like reset, step which is very easier to work for any RL project. To solve this I created a simulated Gym Environment which interacts with Kivy based on Multiprocess Queue and Event mechanism provided by Python. The real Kivy environment works on a separate process while TD3 training works on a separate process
+
+![Kivy Simulated Environment](/doc_images/kivy_simulated_env.png)
+
+TTIn this TD3 train process first starts and it will start the Kivy Environment. There is simulated gym Environment to which TD3 Train process can call methods like env.reset() to reset the environment and env.step(action) to take a action ands gets next state.
+Internally Simulated Gym Environment interacts with Real Kivy Environment using Event and Message Queues. 
+
+
+## ii.	Actor Network
+
+![Actor Network ](/doc_images/actor_network.png)
+
+
+### Actor Input: 
+The Actor Network takes Input as two element tuple
+i.	80x80 numpy array representing  sand with superimposed isosceles triangle rotated the same direction as car and a number score (1-5)
+ii.	Second element is a Numpy Array having 4 parameters, these are
+a.	Angle of Car
+b.	Negative orientation of car to the goal
+c.	Difference in distance between current car position to the goal and previous car position and the goal divided by 4
+d.	A flag on_road, whose value 1 means car is on road and -1 means car is off 
+
+### Convolution Layer: 
+
+There are 5 convolution layers used to transform the road pixel input. Except last layer, each layer 16 3x3 filters with stride 2 and ReLU Activation is used. Last layer has 16 3x3 filter with stride 1
+
+### GAP Layer: 
+
+Global average pooling layer is added after 5 convolution layer which transform into 16x1x1
+
+### LSTM Layer: 
+
+LSTM layer takes the 1 d array and encode into hidden layer of 32 vector tensor
+
+### FC Layer:
+
+There are three full connected layers. 
+-	First layer layer takes hidden layer output form LSTM concatenate with 4 extra parameters additional state information (angle, orientation to goal, difference in distance to goal, On road flag value) and convert into 64 1D tensors and applied ReLU activation
+-	Second layer concatenates  first layer output and the and output is 128 1d tensor and applied ReLU activation
+-	Third layer  output form second layer transform to 1 tensor on which tanh is applied and multiplied by max_action to get the actor output
+
+## iii.	Critic Network
+
+
+
 
 
 
