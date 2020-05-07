@@ -397,7 +397,8 @@ From all the observations I found that though episode 120 has highest reward but
 
 # VII.  Issues Faced During Training and how I handled
 
-## a.	Car hitting Boundary and remain there: For handling this scenario, once car is within 0 pixels boundary, I am giving heavy penalty of -50 and moving the car to a random position to start with. As I am using fixes number of steps for each episode, I continue after hitting boundary
+## a.	Car hitting Boundary and remain there:
+For handling this scenario, once car is within 0 pixels boundary, I am giving heavy penalty of -50 and moving the car to a random position to start with. As I am using fixes number of steps for each episode, I continue after hitting boundary
 ## b.	Car is circling same place (Ghoomar Effect):
 For this is one of common issue that I also encountered. When it happens the action value of  rotation, velocity become either near 5 and -5 and it stays there. I  think this can happen when there are not enough random samples to explore and during training samples are taken from replay buffer which are fed Policy Network and Policy Network has not learnt yet. Here are a things I tried to overcome Ghoomar Effect
 ### a.	
