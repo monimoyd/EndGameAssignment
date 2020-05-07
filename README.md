@@ -63,5 +63,28 @@ For Testing use the command below:
 python TD3_test.py
 
 
+# II. Environment
+The agent i.e. car takes from the current state an action based on the policy and environment tells the next state and gives a reward.
+a.	Observation State Space:
+The following a few picture samples show the examples of one part of observation state space
+
+![sand1(/doc_images/sand_1.png)   ![sand2(/doc_images/sand_2.png)     ![sand3(/doc_images/sand_3.png) 
+![sand4(/doc_images/sand_4.png)   ![sand5(/doc_images/sand_5.png)     ![sand6(/doc_images/sand_6.png) 
+
+Observation state space consists of a image 
+-	Taking mask value of sand by taking 80x80 numpy array by taking 40 pixel around the car.
+-	 A isosceles triangular shaped car (i.e. only two sides are equal ) rotated in the direction the car is moving is superimposed on the image. Isosceles triangle help in asymmetry
+-	 A numbered score representing what the car did in this step is also superimposed. Numbered scores are represented as per below table:
+
+| Number  | What the car did                                                                     |
+| ------- | ------------------------------------------------------------------------------------ |
+|   0     |  Car hit the boundary                                                                |
+|   1     |  Car has done 360 degree rotation clockwise/counter clockwise                        |
+|   2     |  Car is off the Road                                                                 |
+|   3     |  Car is on the Road but distance to destination is increased from the last position  |
+|   4     |  Car is on the Road but distance to destination is reduce from the last position     |
+|   5     | Car has reached the Destination goal                                                 |
+
+
 
 
