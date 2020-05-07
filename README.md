@@ -297,7 +297,8 @@ Plots are done on the collected metrics as below:
 
 ![Training Episode vs Total Rewards](/doc_images/Training_Episode_vs_Total_Rewards.png)
 
-### Analysis : From this plot, it is evident that total reward increases sequentially initially and reaches peak between 125 and 160 and then start declining
+### Analysis :
+From this plot, it is evident that total reward increases sequentially initially and reaches peak between 125 and 160 and then start declining
 
 ### b.	Plot of Training Episode (i.e.  Evaluations done for 500 steps 10 times after training episode) vs Average Total Rewards
 
@@ -322,6 +323,74 @@ From the plot, on road percentage is fluctuating but over episodes even though i
 
 ### Analysis: 
 From the plot, on road percentage increases over episodes and reaches peak between 125 and 160 and then decreases. I could see less fluctuations compared to training so looks like Policy Network is more stable, but during training as I am still using random samples, so system can be bit unstable 
+
+### e.	Plot of training episode vs On Boundary Hit Count  
+
+![training episode vs On Boundary Hit Count](/doc_images/Train_Episode_vs_Hit_Boundary_Count.png)
+
+### Analysis: 
+From the plot I could see fluctuations in Boundary Hit count but the amplitude of fluctuations is more during the initial episodes  but less during later episodes (although I could see some spikes as well).
+
+### f.	Plot of Training Episode (i.e. Evaluation of 500 steps for 10 times  after training Episode) vs Average Hit Boundary
+
+![training eval episode vs On Boundary Hit Count](/doc_images/Evaluation_Episode_vs_Average_Hit_Boundary.png)
+
+
+### Analysis: 
+From the plot, it is evident that average of boundary hit count is decreasing over episodes and lowest in the range 110 to 150 episodes after that there is a small spike but it stabilizes mostly in later episodes
+
+### g.	Plot of Training Episode vs  Goal Hit Count
+
+![training episode vs On Goal Hit Count](/doc_images/Train_Episode_vs_Hit_Goal.png)
+
+### Analysis: From the plot, it is evident that Goal Hit Count is 1 in some episodes other cases it is 0. Only episode around 175 has Goal Count  2
+
+### h.	Plot of Training Episode (i.e. Evaluation of 500 steps for 10 times  after training Episode) vs Average Boundary Hit Count
+
+![training eval episode vs On Goal Hit Count](/doc_images/Evaluation_Episode_vs_Average_Hit_Goal.png)
+
+### Analysis: 
+From the plot, it is evident that Average Goal Hit Count is 0 in most episodes, 0.1 in some episodes. I could observe spike of 0.2 near episodes 35, 125, 145, 155, 175. I could see spike of 0.3 in two cases near 65 and near 200.
+
+# VII.  Selection of Best Model
+
+From the analysis it is evident that best performance of car is between 120 and 175. Next I checked the actual metrics and found that performance specially rewards are very good in episodes 116, 120, 122, 128, 130, 134, 140, 142, 144, 147, 148, 150, 151, 152, 154, 156, 158, 160
+
+Next I loaded Actor and Critic model corresponding to the episode and do a full evaluation of 2500 steps for 5 times only using Policy Network and calculate average reward earned and also observe car is performing and note that in a table like below
+
+120	+157	Average Reward is best, lot of good moves but little unstable
+122	-436.40	Hit the goals twice but Average Reward score is very poor
+128	-254	Average Reward is low 
+130	-290	Average Reward is low
+134	-320	Average Reward is low
+140	-387	Average Reward is low
+142	-192	Average Reward is low
+144	-263	Average Reward is low
+147	-29.70	Very smooth, worth exploring, Average Reward is good
+148	-77.20	Very smooth, worth exploring, Average Reward is good
+150	-58.40	Very smooth, worth exploring, Average Reward is good
+151	-251	Average Reward is Low
+152	-275	Bit Shaky but worth exploring
+154	-392.80	Average Reward is very low
+156	-473.40 	Average Reward is very low
+158	-360.20	Average Reward is very low
+160	-625.50	Average Reward is very low
+199	-2105	Worst. Has Ghoomar effect
+
+
+| Episode      | Average Reward   | Comment                         
+| -------------| -----------------|----------------------------------------------------|
+|  116         |  -16.50          | Lot of times misses goal by whisker but good moves |
+|  120         |  +157            | Average reward is best but moves are not smooth    |
+| Car is on the Road but distance to Goal increased |  +2      |                                                   |
+| Car has hit boundary                              |  -50     | Car is moved to random position                   |
+| Car has reached the goal                          | +100     |                                                   |
+| Car has done 360 degree rotation                  | -50      | Angle is chnaged by taking modulus of 360 or -360 |
+
+
+
+
+
 
 
 
