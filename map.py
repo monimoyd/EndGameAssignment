@@ -68,7 +68,7 @@ if os.path.exists("sand_images") == False:
     os.makedirs("sand_images")	
 	
 	
-full_eval_on_road_stats_file= open("results/full_eval_on_road_stats.csv","a")
+full_eval_on_road_stats_file= open("results/full_eval_on_road_stats.csv","w")
 eval_on_road_stats_file= open("results/eval_on_road_stats.csv","a")
 train_on_road_stats_file= open("results/train_on_road_stats.csv","a")
 full_eval_traversal_log= open("results/full_eval_traversal_log.txt","w")
@@ -81,13 +81,18 @@ car_img = None
 global_counter = 0
 digit_images = []
 episode_total_reward = 0.0
-stop_on_hitting_goal = True
+
+# This flag full_eval_demo_mode should be enabled only for demo in Full_Eval mode.
+# If you want random on road location, change the full_eval_demo_mode to False
+full_eval_demo_mode = True
+
 
 #on_road_postions=[(1247,623), (750,360),(1220,300),(360,310)] # Avg Score: 815.70 episode:148
 #on_road_postions=[(1000,590), (750,360),(1220,300),(360,310)] # Avg Score: 1002 episode:148
 #on_road_postions=[(1070,490), (580,350)] # Avg Score: 855, episode:148/150 AvG:890 episode:147 Avg:42 episode:120
 #on_road_postions=[(1031,496), (343,189)] # Avg Score: 261 episode: 147
-on_road_postions=[(1031,496), (580,350)] # Avg Score: 261 episode: 147
+#on_road_postions=[(1031,496), (580,350)] # Avg Score: 261 episode: 147
+
 random_location=True
 
 
@@ -216,7 +221,23 @@ class Game(Widget):
         elif car_angle < -360:
             car_angle = car_angle % (-360)				
         car_angle = car_angle/360
-        return car_angle		
+        return car_angle
+		
+    
+	
+    def select_random_on_road_location(self):
+        t = np.random.randint(60, self.width-60), np.random.randint(60, self.height-60)
+        while sand[t] != 0	:
+            t = np.random.randint(60, self.width-60), np.random.randint(60, self.height-60)
+        return t
+		
+    def select_demo_location(self, eval_episode_num, traversal_log):
+        traversal_log.write("select_demo_location: eval_episode_num: "+ str(eval_episode_num) + "\n")
+        demo_on_road_postions=[(1031,496), (766,468), (881,424)]
+        index = (eval_episode_num - 1) % len(demo_on_road_postions)
+        traversal_log.write("select_demo_location: eval_episode_num: "+ str(eval_episode_num) + " index: " + str(index) )
+        return demo_on_road_postions[index]		
+        
 
 	
     def update(self, dt):
@@ -281,7 +302,7 @@ class Game(Widget):
                 first_update = True
 				
             (mode, train_episode_num, eval_episode_num) = self.car.mode_q.get()
-            print("mode: ", mode) 
+            print("mode: ", mode, " train_episode_num: ",  train_episode_num, " eval_episode_num:", eval_episode_num ) 
             if mode == "Train":
                 max_steps = 2500
                 traversal_log = train_traversal_log
@@ -300,17 +321,30 @@ class Game(Widget):
             goal_hit_count = 0
             episode_total_reward = 0.0
             #self.car.pos = (100,100)
-            if random_location==True:
-                self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            else:
-                new_index = np.random.randint(len(on_road_postions))
-                print("After reset new_index: ", new_index)
-                traversal_log.write("After reset new_index: " + str(new_index) + "\n")
-                self.car.pos = on_road_postions[new_index]
+            #if random_location==True:
+            #    self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
+            #else:
+            #    new_index = np.random.randint(len(on_road_postions))
+            #    print("After reset new_index: ", new_index)
+            #    traversal_log.write("After reset new_index: " + str(new_index) + "\n")
+            #    self.car.pos = on_road_postions[new_index]
+			
+			
+			
             self.car.rotation = 0.0
             self.car.angle = 0.0
+			
+            if mode=="Train" or  mode == "Eval":
+                self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))                
+            elif mode == "Full_Eval":
+                if full_eval_demo_mode == False:
+                    self.car.pos = self.select_random_on_road_location() 
+                else:
+                    self.car.pos = self.select_demo_location(eval_episode_num, traversal_log)
+                    				
+               
             print("After reset car position: ", self.car.pos)
-            traversal_log.write("After reset car position: " + str(self.car.pos) + "\n")
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : After reset new car position: " + str(self.car.pos) + "\n")
             #state = sand[int(self.car.x)-40:int(self.car.x)+40, int(self.car.y)-40:int(self.car.y)+40]
 
 			
@@ -349,58 +383,28 @@ class Game(Widget):
         velocity = action_array[1]
         new_velocity = 0.4 + 1 + velocity*0.2
         print("map: Got rotation: ", rotation, " velocity: ", new_velocity)
-        traversal_log.write("map: Got rotation: " + str(rotation) + " velocity: " + str(new_velocity) + "\n")
+        traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : map: Got rotation: " + str(rotation) + " velocity: " + str(new_velocity) + "\n")
         #rotation = action2rotation[action]
         self.car.move(rotation)
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
 		
-        if self.car.x < 40:
-            #self.car.x = 20
+        if self.car.x < 40 or self.car.x > self.width - 40 or self.car.y < 40 or self.car.y > self.height - 40:
+            if mode=="Train" or  mode == "Eval":
+                self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))                
+            elif mode == "Full_Eval":
+                if full_eval_demo_mode == False:
+                    self.car.pos = self.select_random_on_road_location() 
+                else:
+                    self.car.pos = self.select_demo_location(eval_episode_num, traversal_log)
             last_reward = -50
-            if random_location==True:
-                self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            else:
-                new_index = np.random.randint(len(on_road_postions))
-                print("After reset new_index: ", new_index)
-                traversal_log.write("After reset new_index: " + str(new_index) + "\n")
-                self.car.pos = on_road_postions[new_index]
+            self.car.rotation = 0.0
+            self.car.angle = 0.0
+            boundary_hit_count += 1
+            hit_boundary = True
+            print("Hit Boundary: new car position: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : Hit Boundary: new car position: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
 			
-            self.car.rotation = 0.0
-            self.car.angle = 0.0
-            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
-            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
-            boundary_hit_count += 1
-            hit_boundary = True
-        if self.car.x > self.width - 40:
-            #self.car.x = self.width - 20
-            last_reward = -50
-            self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            self.car.rotation = 0.0
-            self.car.angle = 0.0
-            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
-            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
-            boundary_hit_count += 1
-            hit_boundary = True
-        if self.car.y < 40:
-            #self.car.y = 20
-            last_reward = -50
-            self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            self.car.rotation = 0.0
-            self.car.angle = 0.0
-            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
-            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
-            boundary_hit_count += 1
-            hit_boundary = True
-        if self.car.y > self.height - 40:
-            #self.car.y = self.height - 20
-            last_reward = -50
-            self.car.pos = Vector(np.random.randint(100, longueur-100), np.random.randint(100, largeur-100))
-            self.car.rotation = 0.0
-            self.car.angle = 0.0
-            print("Hit Boundary: new car postion: ",self.car.pos, " rotation: ", self.car.rotation, " angle: ", self.car.angle)
-            traversal_log.write("Hit Boundary: new car postion: " + str(self.car.pos) +  " rotation: " + str(self.car.rotation) + " angle: " + str(self.car.angle) +  "\n")
-            boundary_hit_count += 1
-            hit_boundary = True
+        
 
         if sand[int(self.car.x),int(self.car.y)] > 0:
             #vel = 0.4 + np.random.uniform(0, 2)
@@ -410,7 +414,7 @@ class Game(Widget):
             on_road = 0
             off_road_count += 1
             print(1,  current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, float(distance - last_distance),  im.read_pixel(int(self.car.x),int(self.car.y)), last_reward)
-            traversal_log.write("1" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward) + "\n")
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : 1" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward) + "\n")
         else: # otherwise
             #self.car.velocity = Vector(2, 0).rotate(self.car.angle)
             self.car.velocity = Vector(new_velocity, 0).rotate(self.car.angle)
@@ -427,7 +431,7 @@ class Game(Widget):
                 on_road = 1
                 distance_reduced = False				
             print(0, current_step + 1, int(self.car.x), int(self.car.y), goal_x, goal_y, float(distance - last_distance),  im.read_pixel(int(self.car.x),int(self.car.y)), last_reward)
-            traversal_log.write("0" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward)+ "\n")
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : 0" + " " +  str(current_step + 1) + " " +  str (int(self.car.x)) + " " +  str(int(self.car.y)) + " " + str(goal_x) + " " +  str(goal_y) + " " +  str(float(distance - last_distance)) + " " + str(im.read_pixel(int(self.car.x),int(self.car.y))) + " " + str(last_reward)+ "\n")
         
 
         if distance < 25:
@@ -439,7 +443,7 @@ class Game(Widget):
                 
             if swap == 1:
                 print("Hit the Goal 2: (" + str(goal_x) + ", " + str(goal_y) + ")")
-                traversal_log.write("Hit the Goal 2: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
+                traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : Hit the Goal 2: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
                 #goal_x = 1420
                 #goal_y = 622
                 goal_x = 575
@@ -447,21 +451,32 @@ class Game(Widget):
                 swap = 0
             else:
                 print("Hit the Goal 1: (" + str(goal_x) + ", " + str(goal_y) + ")")
-                traversal_log.write("Hit the Goal 1: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
+                traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) +  " : Hit the Goal 1: (" + str(goal_x) + ", " + str(goal_y) + ")\n")
                 #goal_x = 212
                 #goal_y = 150
                 #goal_x = 975
                 #goal_y = 110
+                #goal_x = 610
+                #goal_y = 45
                 goal_x = 610
                 goal_y = 45
                 swap = 1
 				
-            if mode == "Full_Eval" and hit_goal==True and stop_on_hitting_goal==True:
+            if mode == "Full_Eval" and hit_goal==True and full_eval_demo_mode==True:
                 #t_color = ListProperty([1,1,0,0])
                 episode_total_reward += last_reward
-                popup = Popup(title='Test popup', content=Label(text="Congratulations! your car has reached the destination and earned total rewards: " + str(episode_total_reward) + " during the trip"),  size=(200, 200), auto_dismiss=False)              
+                #popup = Popup(title='Test popup', content=Label(text="Congratulations! your car has reached the destination and earned total rewards: " + str(episode_total_reward) + " during the trip"),  size=(200, 200), auto_dismiss=False)              
+                popup = Popup(title='Test popup', content=Label(text="Congratulations! your car has reached the destination and earned total rewards: " + str(episode_total_reward) + " during the trip"),  size=(200, 200), auto_dismiss=True)              
                 popup.open()
+                time.sleep(3)
+                popup.dismiss()				
                 done = True
+				
+            if mode == "Full_Eval" and hit_goal==True and full_eval_demo_mode==False:
+                self.car.pos = self.select_random_on_road_location()
+                print("After hiting goal new car position: " + str(self.car.pos))
+                traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : After hitting goal new car position: " + str(self.car.pos) + "\n")
+
 
         last_distance = distance
 		
@@ -474,18 +489,18 @@ class Game(Widget):
             self.car.angle = self.car.angle % 360
             last_reward += -50
             print("360 degree clockwise rotation happended rewarding -50: ")
-            traversal_log.write("360 degree rotation happended rewarding -50: \n")
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : 360 degree rotation happended rewarding -50: \n")
         elif self.car.angle <= -360:	
             self.car.angle = self.car.angle % (-360)
             last_reward += -50
             print("360 degree anti-clockwise rotation happended rewarding -50: ")
-            traversal_log.write("360 degree anti-clockwise rotation happended rewarding -50: \n")
+            traversal_log.write("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : 360 degree anti-clockwise rotation happended rewarding -50: \n")
         reward = last_reward
         current_step += 1
         global_counter += 1
         if done== False:
             episode_total_reward += reward
-        print("current_step: " + str(current_step) + " reward: " + str(reward) + " episode_total_reward: " + str(episode_total_reward))
+        print("Train episode: " + str(train_episode_num) + " Eval episode: " + str(eval_episode_num) + " : current_step: " + str(current_step) + " reward: " + str(reward) + " episode_total_reward: " + str(episode_total_reward))
         if current_step >= max_steps:
             done = True
         distance_diff = (distance - last_distance)/4
