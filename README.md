@@ -1,5 +1,5 @@
 # EndGameProject
-EngGameAssignment
+
 
 # I. Project Overview
 ## Problem Statement
@@ -76,10 +76,11 @@ The following a few picture samples show the examples of one part of observation
 ![sand1](/doc_images/sand_1.png)   ![sand2](/doc_images/sand_2.png)     ![sand3](/doc_images/sand_3.png) 
 ![sand4](/doc_images/sand_4.png)   ![sand5](/doc_images/sand_5.png)     ![sand6](/doc_images/sand_6.jpg.png) 
 
+## a. Observation state space 
 Observation state space consists of a image 
--	Taking mask value of sand by taking 80x80 numpy array by taking 40 pixel around the car.
--	 A isosceles triangular shaped car (i.e. only two sides are equal ) rotated in the direction the car is moving is superimposed on the image. Isosceles triangle help in asymmetry
--	 A numbered score representing what the car did in this step is also superimposed. Numbered scores are represented as per below table:
+-	80x80 numpy array is numpy array is constructre from sand by taking 40 pixels around the current car position
+-	 A isosceles triangule (i.e. only two sides are equal ) rotated in the direction the car is moving, is superimposed on the image. Isosceles triangle help in asymmetric in nature helps to find feature 
+-	 A numeric score (0-5)  representing what the car did in this step is also superimposed. Numbered scores are represented as per below table:
 
 | Number  | What the car did                                                                     |
 | ------- | ------------------------------------------------------------------------------------ |
@@ -97,12 +98,12 @@ In addition the following additional attributes are used in state space
 
 | Attribute       | Description                                                                                                        |
 | ----------------| ------------------------------------------------------------------------------------------------------------------ |
-| Car Angle       | The angle the car is rotated divided by 360. If angle is more than 360 or less than -360, modulus operation is done|  
+| Car Angle       | The angle the car is rotated divided by 360. If angle is more/less than 360/-360, modulus operation is done        |  
 | Orientation     | Angle of orientation of current position of car to the destination goal divided by 360                             |
-| On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |     | Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
+| On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |       | Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
 
 
-b.	Action Space:
+## b.	Action Space:
 Action space of consists of two actions i. Rotation  ii. Velocity along x axis
 
 | Action          | Description                                                        |
@@ -113,7 +114,7 @@ Action space of consists of two actions i. Rotation  ii. Velocity along x axis
 Note: In the Policy network the policy is implemented to give value continuous value between -5 to 5 for both rotation and velocity. Before applying to the car, the value is normalized to the range specified in the table for each of the action
 
 
-c.	Reward:
+## c.	Reward:
 The Rewards are given by environment at each step the agent
 
 
@@ -137,14 +138,15 @@ In this project I have used Twin Delayed Deep Deterministic (TD3) algorithm (htt
 Error) to criticize the actions made by the actor.
 TD3 uses Actor and Critic principle. TD3 uses two Critic Networks and One Actor network 
 TD3 uses experience replay where experience tuples (S,A,R,S`) are added to replay buffer and are randomly sampled from the replay buffer so that samples are not correlated.  
-TD3 algorithm also uses separate target neural network for both Actor and Critic for each of the agent. 
+TD3 algorithm also uses separate target neural network for both Actor and Critic for each of the agent.
+
 There are six neural networks used in T3D
 i.	Local network for Actor
 ii.	Target network for Actor
 iii.	Two networks for Critic
 iv.	Two Target network for Critic
-This algorithm uses time delay for updating Actor after a certain number of iterations. Also, Target Actor and Critic networks are updated periodically after certain number of iterations using Polyak averaging.
-Name Twin in the algorithm is used because there are two Critics used.
+
+TD3 algorithm uses time delay for updating Actor after a certain number of iterations. Also, Target Actor and Critic networks are updated periodically after certain number of iterations using Polyak averaging. Name Twin in the algorithm is used because there are two Critics used.
 
 There are two objectives of the algorithm:
 i. Minimize the Critic loss which is sum of mean squared error between Q value of target Critic and the two Critics. Here Gradient descend is used for updating parameters of Critic Network
@@ -264,8 +266,11 @@ I  have used Adam optimizer for both Actor and Critic Networks with the followin
 
      To improve the training I have used the following techniques
 
-i.	Warmup: Initial 10000 timestamps the replay buffer is filled up random policy by choosing action randomly from the action space. This will help better exploration
-ii.	LSTM:  As the steps taken by car is a sequence problem LSTM used in the network to improve performance.
+#### i.	Warmup: 
+Initial 10000 timestamps the replay buffer is filled up random policy by choosing action randomly from the action space. This will help better exploration
+
+#### ii.	LSTM: 
+As the steps taken by car is a sequence problem LSTM used in the network to improve performance.
 iii.	Choosing Sequences of Experiences from Replay Buffer :  As I have used  LSTM, instead of just taking sample randomly from replay buffer, I have taken sequences of experiences . As I used fixed number of timesteps for each episode, records for consecutive episodes are sequentially stored in replay buffer and it is easy to get records for a particular episode using the following: 
 -	 Randomly choose one episode from the list of completed episodes.
 -	 Randomly choose one of timestep from the chosen episode. Ensure that timestep chosen is between 0 and 2500-256
@@ -274,14 +279,17 @@ For example if currently 100 episodes are run and the randomly chosen episode is
 
 [100*2500 + 100, 100*2500 + 102, 100*2500 + 104, …100*2500 + 356]
 
-iv.	Exploration factor epsilon: For episode explorations, I used a epsilon value which is initialized to 0.9 and after each episode epsilon value is reduced by 0.05 until it reaches 0.2. A random number is generated between 0 and 1 if it is less than epsilon value then next action is taken from random policy else action is taken from the DNN based policy network
+#### iv.	Exploration factor epsilon:
+For episode explorations, I used a epsilon value which is initialized to 0.9 and after each episode epsilon value is reduced by 0.05 until it reaches 0.2. A random number is generated between 0 and 1 if it is less than epsilon value then next action is taken from random policy else action is taken from the DNN based policy network
 
-v.	Gaussian noise  with mean value of 0 and standard deviation (sigma) of 0.1 has been added to explore states.
+#### v.	Gaussian noise:
+Gaussian noise with mean value of 0 and standard deviation (sigma) of 0.1 has been added to actions to explore states.
 
-vi.	Saving Models separately after each episode tagged with episode number: After each episode the model that is used during the episode is saved separately for both actor and Critic. As I have run 200 episodes, so there are 200 instances of both Actor and Critic models are saved. Based on analytics results of metrics collected during the training episode and evaluations done after training 2 episodes, helps to decides which model is doing the best and that is used for deployment.
+#### vi.	Saving Models separately after each episode tagged with episode number:
+After each episode the model that is used during the episode is saved separately for both actor and Critic. As I have run 200 episodes, so there are 200 instances of both Actor and Critic models are saved. Based on analytics results of metrics collected during the training episode and evaluations done after training 2 episodes, helps to decides which model is doing the best and that is used for deployment.
 
 
-v.	Evaluation:
+#### v.	Evaluation:
 
 There are two modes of evaluation:
 i.	Eval : This is used after two training cycles to evaluate the Policy network by using only Policy learnt so far. Each evaluation consists of  500 timesteps and each is run 10 times
@@ -349,7 +357,8 @@ From the plot, it is evident that average of boundary hit count is decreasing ov
 
 ![training episode vs On Goal Hit Count](/doc_images/Train_Episode_vs_Hit_Goal.png)
 
-### Analysis: From the plot, it is evident that Goal Hit Count is 1 in some episodes other cases it is 0. Only episode around 175 has Goal Count  2
+### Analysis: 
+From the plot, it is evident that Goal Hit Count is 1 in some episodes other cases it is 0. Only episode around 175 has Goal Count  2
 
 ### h.	Plot of Training Episode (i.e. Evaluation of 500 steps for 10 times  after training Episode) vs Average Boundary Hit Count
 
@@ -401,8 +410,8 @@ For handling this scenario, once car is within 0 pixels boundary, I am giving he
 ## b.	Training is very slow:
 Initially I tried CPU version of pytorch, I found it was taking very long time to train. So, I installed latest version of CUDA, CUDNN, Nvidia drivers and installed GPU version of pytorch, after that I saw significant improvement in performance
 
-## b.	Car is circling same place (Ghoomar Effect):
-For this is one of common issue that I also encountered. When it happens the action value of  rotation, velocity become either near 5 and -5 and it stays there. I  think this can happen when there are not enough random samples to explore and during training samples are taken from replay buffer which are fed Policy Network and Policy Network has not learnt yet. Here are a things I tried to overcome Ghoomar Effect
+## c.	Car is circling same place (Ghumar Effect):
+For this is one of common issue that I also encountered. When it happens the action value of  rotation, velocity become either near 5 and -5 and it stays there, it is like car is performing Ghumar dance (https://en.wikipedia.org/wiki/Ghoomar) . I  think this can happen when there are not enough random samples to explore and during training samples are taken from replay buffer which are fed Policy Network and Policy Network has not learnt yet. Here are a things I tried to overcome Ghoomar Effect
 
 ### a.	
 I have taken 10000 random experiences initially and even after that also I used exploration factor epsilon initialized to 0.9 and reduce it by 0.05 very episode till it reaches 0.2. This ensures replay buffer always have enough random experiences in buffer
@@ -422,13 +431,13 @@ The There are lot of scopes for improvements
 I have choosen 80x80 sand superimposed with isosceles triangle and numbered rating for state. A bigger dimension of say 160x160 can be
 tried, which can give better performance
 
-## a.	Multiple Goals:
+## b.	Multiple Goals:
 Although during training I have used two goals, after hitting the first goal, the goal is changed to second goal. But in reality I saw goal is hit less number of times, so second goal has got very less exploration. Also, number of goals can be increased. To give equal weightage to all the chosen goals, one of the goals can be chosen randomly during episode
 
-## b.	Multiple cars:
+## c.	Multiple cars:
 In real world scenario, there will be multiple cars plying on the Road. Our agent should learn to handle this and should avoid collisions. For this MADDPG (Multiple Agent Deep Deterministic Algorithm) could be used
 
-### c.	Kalman Filter:
+### d.	Kalman Filter:
 From Wikipedia “In statistics and control theory, Kalman filtering, also known as linear quadratic estimation (LQE), is an algorithm that uses a series of measurements observed over time, containing statistical noise and other inaccuracies, and produces estimates of unknown variables that tend to be more accurate than those based on a single measurement alone, by estimating a joint probability distribution over the variables for each timeframe”. Even though I have used LSTM but Kalman filter could give better results
 
 # IX. Code Structure:
