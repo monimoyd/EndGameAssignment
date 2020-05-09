@@ -482,8 +482,12 @@ def mkdir(base, name):
 if __name__ == '__main__':
     env_name = "kivy-car"
     seed = 41 # Random seed number
-    #file_name = "%s_%s_%s" % ("TD3_best", env_name, str(seed))
-    file_name = "%s_%s_%s_%s" % ("TD3", env_name, str(seed),str(147) )
+	# If you want to load model from different episode for full evaluation please change here 
+	# Also, make sure that corresponding Actor and Critic models exist in pytorch_models folder
+    episode_model_to_load=147
+    file_name = "%s_%s_%s_%s" % ("TD3", env_name, str(seed),str(episode_model_to_load) )
+	# Results of different models when run 5 times, full_eval_demo_mode was set to False in map.py
+	#---------------------------------------------------------------------------------------------
 	# 116 Average Reward: -16.50 (lot of times misses goal by whisker but good moves)
 	# 120 Average Reward: +157 (There are lot of good movements)
 	# 122 Average Reward: -436.40 (Hit both the goals)
@@ -525,7 +529,7 @@ if __name__ == '__main__':
     #policy.load(file_name, './pytorch_models/')
     #policy.load('TD3_best_kivy-car_0', './pytorch_models/')
     policy.load(file_name, './pytorch_models/')
-    _ = evaluate_policy(env, policy, eval_episodes=1,  mode="Full_Eval")
+    _ = evaluate_policy(env, policy, eval_episodes=3,  mode="Full_Eval")
 		
 
 
