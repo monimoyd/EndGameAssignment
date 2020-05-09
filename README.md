@@ -434,9 +434,8 @@ The default learning of Adam optimizer is 0.001. I changed the learning to 1e-5 
 
 The There are lot of scopes for improvements
 
-## a.	Choosing bigger sand dimension for state space:
-I have choosen 80x80 sand superimposed with isosceles triangle and numbered rating for state. A bigger dimension of say 160x160 can be
-tried, which can give better performance
+## a.	Choosing bigger dimension for state space:
+I have choosen 80x80 patch from  sand superimposed with isosceles triangle and numbered rating for state. A bigger dimension of say 160x160 can be tried, which can give better performance
 
 ## b.	Multiple Goals:
 Although during training I have used two goals, after hitting the first goal, the goal is changed to second goal. But in reality I saw goal is hit less number of times, so second goal has got very less exploration. Also, number of goals can be increased. To give equal weightage to all the chosen goals, one of the goals can be chosen randomly during episode
@@ -476,7 +475,7 @@ From Wikipedia “In statistics and control theory, Kalman filtering, also known
 
 
 # XI. Conlcusion
-In this project I have used TD3 algorithm to train a agent car in Kivy environment. I have faced lot of technical challenges and resolved one by one. One of the greatest learning I got from the project is I need to be "patient and try try again and never say die " to be successful in Deep Learning Projects and which will be helpful in future as well
+In this project I have used TD3 algorithm to train a agent car in Kivy environment. I have faced lot of technical challenges and resolved one by one. One of the greatest learning I got from the project is I need to be "patient and try try again and never give up " to be successful in Deep Learning Projects and which will be helpful in future as well
 
 
 
