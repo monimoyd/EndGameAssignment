@@ -425,8 +425,12 @@ class TD3(object):
   
   # Making a load method to load a pre-trained model
   def load(self, filename, directory):
-    self.actor.load_state_dict(torch.load('%s/%s_actor.pth' % (directory, filename)))
-    self.critic.load_state_dict(torch.load('%s/%s_critic.pth' % (directory, filename)))
+    if torch.cuda.is_available() == True:
+        self.actor.load_state_dict(torch.load('%s/%s_actor.pth' % (directory, filename)))
+        self.critic.load_state_dict(torch.load('%s/%s_critic.pth' % (directory, filename)))
+    else:
+        self.actor.load_state_dict(torch.load('%s/%s_actor.pth' % (directory, filename), map_location='cpu'))
+        self.critic.load_state_dict(torch.load('%s/%s_critic.pth' % (directory, filename), map_location='cpu'))
 
 def evaluate_policy(env, policy, train_episode_num=0, eval_episodes=10, mode="Eval"):
   global eval_epoch_reward_file
