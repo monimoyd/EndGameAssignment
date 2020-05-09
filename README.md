@@ -18,6 +18,8 @@ Youtube Video Link: (Car is reaching destination from three different locations)
 
 https://youtu.be/PuYGt-HnJ0s 
 
+For full details about the project you can continue to read README.md or you can download pdf version of report from
+![Project Report](/project_report.pdf)
 
 Highlights of various activities I have done in the project
 -	Created a simulated gym environment based on Kivy environment 
@@ -30,7 +32,7 @@ Highlights of various activities I have done in the project
 -	Metrics (Total Rewards, On Road/Off Road count, Goal Hit Count, Boundary Hit Count) are calculated in each episode of training as well as evaluation
 -	Both Actor and Critic Models after each episode is stored
 -	Based on Analytics  on collected Metrics for evaluation and training episodes I have chosen appropriate model for testing
--	Tuned parameters like learning rate, weight decay to overcome agent circling  (i.e. Ghoomar) effect
+-	Tuned parameters like learning rate, weight decay to overcome agent circling  (i.e. Ghumar) effect
 
 How to install and Run on Windows:
 i.	First create a new conda environment
@@ -101,6 +103,7 @@ In addition the following additional attributes are used in state space
 | Car Angle       | The angle the car is rotated divided by 360. If angle is more/less than 360/-360, modulus operation is done        |  
 | Orientation     | Angle of orientation of current position of car to the destination goal divided by 360                             |
 | On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |       | Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
+|                 |                                                                                                                    |
 
 
 ## b.	Action Space:
@@ -296,7 +299,7 @@ i.	Eval : This is used after two training cycles to evaluate the Policy network 
 ii.	Full Evaluation: - This mode is used for demo and deployment. Currently when Goal is reached done variable is set to True. (For running full episode stop_on_hitting_goal to False. But ideally during testing time instead of random location it should be on the road but it is not implemented yet).
 
 
-# VI.  Analytics on Metrics Collected
+# V.  Analytics on Metrics Collected
 
 The metrics collected during Training and Evaluation phases after each episode are as below:
 i.	Total Rewards
@@ -367,7 +370,7 @@ From the plot, it is evident that Goal Hit Count is 1 in some episodes other cas
 ### Analysis: 
 From the plot, it is evident that Average Goal Hit Count is 0 in most episodes, 0.1 in some episodes. I could observe spike of 0.2 near episodes 35, 125, 145, 155, 175. I could see spike of 0.3 in two cases near 65 and near 200.
 
-# VII.  Selection of Best Model
+# VI.  Selection of Best Model
 
 From the analysis it is evident that best performance of car is between 120 and 175. Next I checked the actual metrics and found that performance specially rewards are very good in episodes 116, 120, 122, 128, 130, 134, 140, 142, 144, 147, 148, 150, 151, 152, 154, 156, 158, 160
 
