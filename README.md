@@ -18,8 +18,8 @@ Youtube Video Link: (Car is reaching destination from three different locations)
 
 https://youtu.be/PuYGt-HnJ0s 
 
-For full details about the project you can continue to read README.md or you can download pdf version of report from
-![Project Report](/project_report.pdf)
+For full details about the project you can continue to read README.md or you can download pdf version of report from   
+   ![Project Report](/project_report.pdf)
 
 Highlights of various activities I have done in the project
 -	Created a simulated gym environment based on Kivy environment 
