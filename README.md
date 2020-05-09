@@ -57,17 +57,20 @@ iv.	Clone the repository
 
 git clone https://github.com/monimoyd/EndGameAssignment.git
 
-v.	Training
+v.	Testing 
+
+For Testing use the command below:
+
+python TD3_test.py
+
+Note: By default Full Evaluation mode (i.e Test) is in demo mode, you can change the variable full_eval_demo_mode to False in map.py if you do not want in demo mode
+
+vi.	Training
 
 For training use the command below
 
 python TD3_train.py
 
-vi.	Testing 
-
-For Testing use the command below:
-
-python TD3_test.py
 
 
 # II. Environment
@@ -296,7 +299,7 @@ After each episode the model that is used during the episode is saved separately
 
 There are two modes of evaluation:
 i.	Eval : This is used after two training cycles to evaluate the Policy network by using only Policy learnt so far. Each evaluation consists of  500 timesteps and each is run 10 times
-ii.	Full Evaluation: - This mode is used for demo and deployment. Currently when Goal is reached done variable is set to True. (For running full episode stop_on_hitting_goal to False. But ideally during testing time instead of random location it should be on the road but it is not implemented yet).
+ii.	Full Evaluation (Testing): - This mode is used for demo and deployment. Currently when Goal is reached done variable is set to True. (For running full episode stop_on_hitting_goal to False. But ideally during testing time instead of random location it should be on the road but it is not implemented yet). By default Full Evaluation is in demo mode, if you do not want in demo mode, you can change the variable full_eval_demo_mode to False in map.py
 
 
 # V.  Analytics on Metrics Collected
