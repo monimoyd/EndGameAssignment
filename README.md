@@ -105,7 +105,8 @@ In addition the following additional attributes are used in state space
 | ----------------| ------------------------------------------------------------------------------------------------------------------ |
 | Car Angle       | The angle the car is rotated divided by 360. If angle is more/less than 360/-360, modulus operation is done        |  
 | Orientation     | Angle of orientation of current position of car to the destination goal divided by 360                             |
-| On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |       | Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
+| Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
+| On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |       
 |                 |                                                                                                                    |
 
 
