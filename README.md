@@ -271,7 +271,7 @@ I  have used Adam optimizer for both Actor and Critic Networks with the followin
 
 ### b.	 Techniques used to Improve Training
 
-     To improve the training I have used the following techniques
+To improve the training I have used the following techniques
 
 #### i.	Warmup: 
 Initial 10000 timestamps the replay buffer is filled up random policy by choosing action randomly from the action space. This will help better exploration
