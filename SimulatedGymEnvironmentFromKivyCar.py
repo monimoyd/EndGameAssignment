@@ -24,7 +24,8 @@ class SimulatedGymEnvironmentFromKivyCar(object):
     def start(self):
         self.process = multiprocessing.Process(target=worker, args=(self.start_event, self.reset_q, self.mode_q, self.state_q, self.action_q, self.next_state_reward_done_tuple_q))
         self.process.start()
-        time.sleep(10)
+        #time.sleep(10)
+        time.sleep(1)
 		
     def close(self):
         if self.process is not None:
