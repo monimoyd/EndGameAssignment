@@ -415,8 +415,12 @@ class TD3(object):
 	
   # Making a save method to save a trained model
   def save(self, filename, directory):
-    torch.save(self.actor.state_dict(), '%s/%s_actor.pth' % (directory, filename))
-    torch.save(self.critic.state_dict(), '%s/%s_critic.pth' % (directory, filename))
+    if torch.cuda.is_available() == True:
+        self.actor.load_state_dict(torch.load('%s/%s_actor.pth' % (directory, filename)))
+        self.critic.load_state_dict(torch.load('%s/%s_critic.pth' % (directory, filename)))
+    else:
+        self.actor.load_state_dict(torch.load('%s/%s_actor.pth' % (directory, filename), map_location='cpu'))
+        self.critic.load_state_dict(torch.load('%s/%s_critic.pth' % (directory, filename), map_location='cpu'))
   
   # Making a load method to load a pre-trained model
   def load(self, filename, directory):
