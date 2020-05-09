@@ -14,14 +14,15 @@ I have used Kivy Environment for this project
 https://kivy.org/doc/stable/installation/installation-windows.html with maps provided by TSAI.
 In this project I have created a framework for Deep Reinforcement Learning.
 
-Youtube Video Link:
-https://youtu.be/WJPDG1FKJQg 
+Youtube Video Link: (Car is reaching destination from three different locations)
+
+https://youtu.be/PuYGt-HnJ0s 
 
 
 Highlights of various activities I have done in the project
 -	Created a simulated gym environment based on Kivy environment 
 -	Used Twin Delayed Deep Deterministic (TD3) algorithm  for training
--	Used LSTM and Convolutional Neural Network(CNN) based DNN model
+-	Used LSTM and Convolutional Neural Network(CNN) based DNN model. Random sequences of experiences are taken from Replay Buffer as input to LSTM
 -	For state space, mask is superimposed with a triangular rotated car  along with a numbered score based on what the car did in the step
 -	Random sampling of actions initially to fill up the replay buffer initially
 -	Mixture of random actions and policy actions are done based on exploration factor epsilon value which is reduced every episode
@@ -97,8 +98,9 @@ In addition the following additional attributes are used in state space
 | Attribute       | Description                                                                                                        |
 | ----------------| ------------------------------------------------------------------------------------------------------------------ |
 | Car Angle       | The angle the car is rotated divided by 360. If angle is more than 360 or less than -360, modulus operation is done|  
-| Orientation     |  Angle of orientation of current position of car to the destination goal divided by 360                            |
+| Orientation     | Angle of orientation of current position of car to the destination goal divided by 360                             |
 | On Road         | Whether car is on road, It has value 1 if car is on road, 0 if car is off road                                     |     | Diff Distance   | Difference of distance of the car to the Destination goal from the current position and the last position          |
+
 
 b.	Action Space:
 Action space of consists of two actions i. Rotation  ii. Velocity along x axis
@@ -241,21 +243,21 @@ iv.	Run analytics on the metrics and choose the best model
 ## iv.	Training
 
 ### a.	Hyper parameters Used during training
-           I  have used Adam optimizer for both Actor and Critic Networks with the
-           following hyper parameters:
 
-                 Batch Size: 128
-                 Number of time steps : 500000
-                 Steps per episode: 2500
-                 Discount Rate (gamma) : 0.99
-                 Soft update of target parameters (Tau) : 0.005
-                 Initial warmup episodes without learning: 10000 timesteps
-                 Number of learning steps for each environment step : 128
-                 Exploration Noise : 0.1
-                 Policy Noise : 0.2
-                Actor Learning Rate: 1e-5
-                Actor Weight Decay: 0.01
-                 Critic Learning Rate: 2e-5
+I  have used Adam optimizer for both Actor and Critic Networks with the following hyper parameters:
+           
+        Batch Size: 128
+        Number of time steps : 500000
+        Steps per episode: 2500
+        Discount Rate (gamma) : 0.99
+        Soft update of target parameters for Polyak Averaging (Tau) : 0.005
+        Initial warmup episodes without learning: 10000 timesteps
+        Number of learning steps for each environment step : 128
+        Exploration Noise : 0.1
+        Policy Noise : 0.2
+        Actor Learning Rate: 1e-5
+        Actor Weight Decay: 0.01
+        Critic Learning Rate: 2e-5
 
 
 ### b.	 Techniques used to Improve Training
@@ -276,7 +278,7 @@ iv.	Exploration factor epsilon: For episode explorations, I used a epsilon value
 
 v.	Gaussian noise  with mean value of 0 and standard deviation (sigma) of 0.1 has been added to explore states.
 
-vi.	Saving Models separately for each episode: After each episode the model that is used during the episode is saved separately for both actor and Critic. As I have run 200 episodes, so there are 200 instances of both Actor and Critic models are saved. Based on analytics results of metrics collected during the training episode and evaluations done after training 2 episodes, helps to decides which model is doing the best and that is used for deployment.
+vi.	Saving Models separately after each episode tagged with episode number: After each episode the model that is used during the episode is saved separately for both actor and Critic. As I have run 200 episodes, so there are 200 instances of both Actor and Critic models are saved. Based on analytics results of metrics collected during the training episode and evaluations done after training 2 episodes, helps to decides which model is doing the best and that is used for deployment.
 
 
 v.	Evaluation:
@@ -387,24 +389,27 @@ Next I loaded Actor and Critic model corresponding to the episode and do a full 
 
 
 
-
-
-
-
-
  
-From all the observations I found that though episode 120 has highest reward but car moves are not very smooth. So I have decided to choose model from episode 147 which has good average reward but car moves are smooth, so I have chosen model from episode 147 for deployment, demo and any further fine tuning. I have stored all the other model weights as well so that it can used for future analysis
+From all the observations I found that though episode 120 has highest reward but car moves are not very smooth. So I have decided to choose Actor, Critic model from episode 147 which has good average reward also car moves are smooth. I have used Model from episode 147  for deployment, demo and any further fine tuning. I have stored all the other model weights as well so that it can used for future analysis
+
 
 # VII.  Issues Faced During Training and how I handled
 
 ## a.	Car hitting Boundary and remain there:
 For handling this scenario, once car is within 0 pixels boundary, I am giving heavy penalty of -50 and moving the car to a random position to start with. As I am using fixes number of steps for each episode, I continue after hitting boundary
+
+## b.	Training is very slow:
+Initially I tried CPU version of pytorch, I found it was taking very long time to train. So, I installed latest version of CUDA, CUDNN, Nvidia drivers and installed GPU version of pytorch, after that I saw significant improvement in performance
+
 ## b.	Car is circling same place (Ghoomar Effect):
 For this is one of common issue that I also encountered. When it happens the action value of  rotation, velocity become either near 5 and -5 and it stays there. I  think this can happen when there are not enough random samples to explore and during training samples are taken from replay buffer which are fed Policy Network and Policy Network has not learnt yet. Here are a things I tried to overcome Ghoomar Effect
+
 ### a.	
 I have taken 10000 random experiences initially and even after that also I used exploration factor epsilon initialized to 0.9 and reduce it by 0.05 very episode till it reaches 0.2. This ensures replay buffer always have enough random experiences in buffer
+
 ### b.	
 Whenever 360 degree rotation happens, clockwise or anti clockwise, I penalize the car agent by giving reward of -50. For checking if car has rotated 360 I check if the car.angle value is greater than 360 or less than 360 and then take modulus value of 360 (if clockwise) or modulus value of -360 (if anti clockwise) to set the new car angle so that I do not miss it next time
+
 ### c.	
 The default learning of Adam optimizer is 0.001. I changed the learning to 1e-5 for actor and 2e-5 for critic. Also I used weight decay (L2 regularization) for Actor 
 
@@ -413,10 +418,16 @@ The default learning of Adam optimizer is 0.001. I changed the learning to 1e-5 
 
 The There are lot of scopes for improvements
 
+## a.	Choosing bigger sand dimension for state space:
+I have choosen 80x80 sand superimposed with isosceles triangle and numbered rating for state. A bigger dimension of say 160x160 can be
+tried, which can give better performance
+
 ## a.	Multiple Goals:
 Although during training I have used two goals, after hitting the first goal, the goal is changed to second goal. But in reality I saw goal is hit less number of times, so second goal has got very less exploration. Also, number of goals can be increased. To give equal weightage to all the chosen goals, one of the goals can be chosen randomly during episode
+
 ## b.	Multiple cars:
 In real world scenario, there will be multiple cars plying on the Road. Our agent should learn to handle this and should avoid collisions. For this MADDPG (Multiple Agent Deep Deterministic Algorithm) could be used
+
 ### c.	Kalman Filter:
 From Wikipedia “In statistics and control theory, Kalman filtering, also known as linear quadratic estimation (LQE), is an algorithm that uses a series of measurements observed over time, containing statistical noise and other inaccuracies, and produces estimates of unknown variables that tend to be more accurate than those based on a single measurement alone, by estimating a joint probability distribution over the variables for each timeframe”. Even though I have used LSTM but Kalman filter could give better results
 
@@ -448,6 +459,8 @@ From Wikipedia “In statistics and control theory, Kalman filtering, also known
 | sand_images/                        | After every 500 timesteps ,the sand image with superimposed triangle and number is captured    |
 
 
+# XI. Conlcusion
+In this project I have used TD3 algorithm to train a agent car in Kivy environment. I have faced lot of technical challenges and resolved one by one. One of the greatest learning I got from the project is I need to be "patient and try try again and never say die " to be successful in Deep Learning Projects and which will be helpful in future as well
 
 
 
