@@ -161,7 +161,6 @@ ii. Maximize the performance of Actor. Here Gradient ascent is used for updating
 For Details of TD3 algorithm and flows please visit:
 https://github.com/monimoyd/P2_S9
 
-
 # IV. Methodology and Solution approach
 ## i.	Simulated Gym Environment to encapsulate the Kivy Environment
 Kivy Environment does not provide methods like reset, step which is very easier to work for any RL project. To solve this I created a simulated Gym Environment which interacts with Kivy based on Multiprocess Queue and Event mechanism provided by Python. The real Kivy environment works on a separate process while TD3 training works on a separate process
@@ -267,7 +266,6 @@ I  have used Adam optimizer for both Actor and Critic Networks with the followin
         Actor Learning Rate: 1e-5
         Actor Weight Decay: 0.01
         Critic Learning Rate: 2e-5
-
 
 ### b.	 Techniques used to Improve Training
 
